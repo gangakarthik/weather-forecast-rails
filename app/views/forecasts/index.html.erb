@@ -1,2 +1,264 @@
-<h1>Forecasts#index</h1>
-<p>Find me in app/views/forecasts/index.html.erb</p>
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Weather Forecast</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        font-family: Arial, sans-serif;
+        background: #f0f4f8;
+        color: #333;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+      }
+
+      h1 {
+        text-align: center;
+        margin-bottom: 24px;
+        font-size: 28px;
+        color: #2c3e50;
+      }
+
+      .search-form {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 24px;
+      }
+
+      .search-form input {
+        flex: 1;
+        padding: 12px;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+      }
+
+      .search-form button {
+        padding: 12px 24px;
+        background: #3498db;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        cursor: pointer;
+      }
+
+      .search-form button:hover { background: #2980b9; }
+
+      .alert {
+        background: #fdecea;
+        color: #c0392b;
+        padding: 12px;
+        border-radius: 6px;
+        margin-bottom: 16px;
+      }
+
+      .cache-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: bold;
+        margin-bottom: 16px;
+      }
+
+      .cache-badge.cached     { background: #f39c12; color: white; }
+      .cache-badge.not-cached { background: #27ae60; color: white; }
+
+      .current-weather {
+        background: white;
+        border-radius: 8px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      }
+
+      .current-weather h2 {
+        font-size: 22px;
+        margin-bottom: 16px;
+        color: #2c3e50;
+      }
+
+      .temperature {
+        font-size: 48px;
+        font-weight: bold;
+        color: #2c3e50;
+      }
+
+      .temperature span {
+        font-size: 20px;
+        color: #7f8c8d;
+      }
+
+      .weather-icon {
+        width: 64px;
+        height: 64px;
+      }
+
+      .weather-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+        margin-top: 16px;
+      }
+
+      .weather-detail-item {
+        background: #f8f9fa;
+        padding: 12px;
+        border-radius: 6px;
+        text-align: center;
+      }
+
+      .weather-detail-item .label {
+        font-size: 12px;
+        color: #7f8c8d;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+      }
+
+      .weather-detail-item .value {
+        font-size: 18px;
+        font-weight: bold;
+        color: #2c3e50;
+      }
+
+      .forecast h2 {
+        font-size: 20px;
+        margin-bottom: 16px;
+        color: #2c3e50;
+      }
+
+      .forecast-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 12px;
+      }
+
+      .forecast-day {
+        background: white;
+        border-radius: 8px;
+        padding: 16px;
+        text-align: center;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      }
+
+      .forecast-day .date {
+        font-size: 13px;
+        font-weight: bold;
+        color: #2c3e50;
+        margin-bottom: 8px;
+      }
+
+      .forecast-day .desc {
+        font-size: 12px;
+        color: #7f8c8d;
+        margin-top: 6px;
+        margin-bottom: 6px;
+      }
+
+      .forecast-day .temps { font-size: 14px; }
+      .forecast-day .high  { color: #e74c3c; font-weight: bold; }
+      .forecast-day .low   { color: #3498db; }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <h1>🌤 Weather Forecast</h1>
+
+      <% if flash[:alert] %>
+        <div class="alert"><%= flash[:alert] %></div>
+      <% end %>
+
+      <%= form_with url: create_forecast_path, method: :post, local: true do |f| %>
+        <div class="search-form">
+          <%= f.text_field :address,
+              placeholder: "Enter city, address or zip code...",
+              value: @address,
+              autofocus: true %>
+          <%= f.submit "Get Forecast" %>
+        </div>
+      <% end %>
+
+      <% if @forecast %>
+        <% if @forecast[:cached] %>
+          <span class="cache-badge cached">⚡ Cached Result</span>
+        <% else %>
+          <span class="cache-badge not-cached"> Live Result</span>
+        <% end %>
+
+        <% current = @forecast[:current] %>
+
+        <div class="current-weather">
+          <h2>
+            <%= current[:city] %>, <%= current[:country] %>
+            <img class="weather-icon"
+                 src="https://openweathermap.org/img/wn/<%= current[:icon] %>@2x.png"
+                 alt="<%= current[:description] %>">
+          </h2>
+
+          <div class="temperature">
+            <%= current[:temp_c] %>°C
+            <span>/ <%= current[:temp_f] %>°F</span>
+          </div>
+
+          <p style="margin-top: 8px; color: #7f8c8d;">
+            <%= current[:description] %>
+          </p>
+
+          <div class="weather-details">
+            <div class="weather-detail-item">
+              <div class="label">Feels Like</div>
+              <div class="value"><%= current[:feels_like_c] %>°C</div>
+            </div>
+            <div class="weather-detail-item">
+              <div class="label">High</div>
+              <div class="value"><%= current[:temp_max_c] %>°C</div>
+            </div>
+            <div class="weather-detail-item">
+              <div class="label">Low</div>
+              <div class="value"><%= current[:temp_min_c] %>°C</div>
+            </div>
+            <div class="weather-detail-item">
+              <div class="label">Humidity</div>
+              <div class="value"><%= current[:humidity] %>%</div>
+            </div>
+            <div class="weather-detail-item">
+              <div class="label">Wind</div>
+              <div class="value"><%= current[:wind_speed] %> m/s</div>
+            </div>
+          </div>
+        </div>
+
+        <% if @forecast[:forecast].present? %>
+          <div class="forecast">
+            <h2>5-Day Forecast</h2>
+            <div class="forecast-grid">
+              <% @forecast[:forecast].each do |day| %>
+                <div class="forecast-day">
+                  <div class="date"><%= day[:date] %></div>
+                  <img class="weather-icon"
+                       src="https://openweathermap.org/img/wn/<%= day[:icon] %>@2x.png"
+                       alt="<%= day[:description] %>">
+                  <div class="desc"><%= day[:description] %></div>
+                  <div class="temps">
+                    <span class="high"><%= day[:temp_max_c] %>°C</span>
+                    /
+                    <span class="low"><%= day[:temp_min_c] %>°C</span>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+
+      <% end %>
+    </div>
+  </body>
+</html>
